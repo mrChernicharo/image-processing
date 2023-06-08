@@ -8,7 +8,7 @@ const execAsync = promisify(exec);
 const filename = "windows.jpg";
 const COMMAND_NAMES = {
   crop: "crop",
-  blackPad: "blackPad",
+  black_pad: "black_pad",
   abs_scale: "abs_scale",
 };
 const COMMANDS_FNS = {
@@ -24,8 +24,8 @@ const COMMANDS_FNS = {
   //       ? `ffmpeg -i ${inputPath} -vf "scale=-1:${h},crop=${w}:${h}" ${outputPath}`
   //       : `ffmpeg -i ${inputPath} -vf "scale=${w}:-1,crop=${w}:${h}" ${outputPath}`;
   //   },
-  //   [COMMAND_NAMES.preserveAspectBlackPad]: (inputPath, outputPath) =>
-  //     `ffmpeg -i ${inputPath} -vf "scale=${w}:${h}:force_original_aspect_ratio=decrease,pad=${w}:${h}:-1:-1:color=black" ${outputPath}`,
+  [COMMAND_NAMES.black_pad]: (inputPath, outputPath, w, h) =>
+    `ffmpeg -i ${inputPath} -vf "scale=${w}:${h}:force_original_aspect_ratio=decrease,pad=${w}:${h}:-1:-1:color=black" ${outputPath}`,
   [COMMAND_NAMES.abs_scale]: (inputPath, outputPath, w, h) =>
     `ffmpeg -i ${inputPath} -vf "scale=${w}:${h}" ${outputPath}`,
 };
@@ -43,15 +43,15 @@ async function createProcessedImg(config) {
   const {
     filepath = `${process.cwd()}/images/input/${filename}`,
     outDir = `${process.cwd()}/images/output`,
-    aspectRatio = "3:2",
+    aspectRatio = "3:9",
+    // aspectRatio = "3:2",
     maxDim = 1440,
     ffmOp = {},
   } = config;
-  const { commandName = "abs_scale", format = "webp", translate = 0.5 } = ffmOp;
+  const { commandName = "black_pad", format = "webp", translate = 0.5 } = ffmOp;
 
   const finalDims = getDesiredDimensions(aspectRatio, maxDim);
   const [w, h] = finalDims;
-
 
   const noExtensionFilename = filename.replace(/\.[^.]*$/, "");
   const outputPath = `${outDir}/${noExtensionFilename}-${w}X${h}-${commandName}.${format}`;
