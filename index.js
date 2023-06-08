@@ -9,7 +9,25 @@ const filename = "windows.jpg";
 const COMMAND_NAMES = {
   crop: "crop",
   blackPad: "blackPad",
-  scaleAbs: "scaleAbs",
+  abs_scale: "abs_scale",
+};
+const COMMANDS_FNS = {
+  //   [COMMAND_NAMES.crop]: (inputPath, outputPath) => {
+  // const ffGetImgDimensions = await execAsync(
+  //   `ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 ${filepath}`
+  // );
+  // const [origW, origH] = ffGetImgDimensions.stdout.split(",").map(Number);
+  // console.log({ origW, origH, origMainAxis });
+
+  // const origMainAxis = origH > origW ? "Vert" : "Horiz";
+  //     return origMainAxis === "Vert"
+  //       ? `ffmpeg -i ${inputPath} -vf "scale=-1:${h},crop=${w}:${h}" ${outputPath}`
+  //       : `ffmpeg -i ${inputPath} -vf "scale=${w}:-1,crop=${w}:${h}" ${outputPath}`;
+  //   },
+  //   [COMMAND_NAMES.preserveAspectBlackPad]: (inputPath, outputPath) =>
+  //     `ffmpeg -i ${inputPath} -vf "scale=${w}:${h}:force_original_aspect_ratio=decrease,pad=${w}:${h}:-1:-1:color=black" ${outputPath}`,
+  [COMMAND_NAMES.abs_scale]: (inputPath, outputPath, w, h) =>
+    `ffmpeg -i ${inputPath} -vf "scale=${w}:${h}" ${outputPath}`,
 };
 
 function getDesiredDimensions(aspectRatio, maxDim) {
@@ -21,41 +39,25 @@ function getDesiredDimensions(aspectRatio, maxDim) {
   return [dims[0], dims[1]];
 }
 
-async function createProcessedImgs(config) {
+async function createProcessedImg(config) {
   const {
     filepath = `${process.cwd()}/images/input/${filename}`,
     outDir = `${process.cwd()}/images/output`,
-    aspectRatio = "9:16",
-    // aspectRatio = "16:9",
-    // aspectRatio = "3:2",
+    aspectRatio = "3:2",
     maxDim = 1440,
     ffmOp = {},
   } = config;
-  const { name = "crop", format = "webp", translate = 0.5 } = ffmOp;
-
-  const ffGetImgDimensions = await execAsync(
-    `ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 ${filepath}`
-  );
-  const [origW, origH] = ffGetImgDimensions.stdout.split(",").map(Number);
-  const origMainAxis = origH > origW ? "Vert" : "Horiz";
-  console.log({ origW, origH, origMainAxis });
+  const { commandName = "abs_scale", format = "webp", translate = 0.5 } = ffmOp;
 
   const finalDims = getDesiredDimensions(aspectRatio, maxDim);
-  console.log({ finalDims });
+  const [w, h] = finalDims;
 
-  // const [w, h] = aspectRatio
 
-  // const COMMANDS_FNS = {
-  //   [COMMAND_NAMES.crop]: (inputPath, outputPath) => {
-  //     return origMainAxis === "Vert"
-  //       ? `ffmpeg -i ${inputPath} -vf "scale=-1:${h},crop=${w}:${h}" ${outputPath}`
-  //       : `ffmpeg -i ${inputPath} -vf "scale=${w}:-1,crop=${w}:${h}" ${outputPath}`;
-  //   },
-  //   [COMMAND_NAMES.preserveAspectBlackPad]: (inputPath, outputPath) =>
-  //     `ffmpeg -i ${inputPath} -vf "scale=${w}:${h}:force_original_aspect_ratio=decrease,pad=${w}:${h}:-1:-1:color=black" ${outputPath}`,
-  //   [COMMAND_NAMES.scaleAbs]: (inputPath, outputPath) => `ffmpeg -i ${inputPath} -vf "scale=${w}:${h}" ${outputPath}`,
-  // };
+  const noExtensionFilename = filename.replace(/\.[^.]*$/, "");
+  const outputPath = `${outDir}/${noExtensionFilename}-${w}X${h}-${commandName}.${format}`;
+  const command = COMMANDS_FNS[commandName](filepath, outputPath, w, h);
+
+  await execAsync(command);
 }
 
-// createProcessedImgs({ ffmOp: {} });
-createProcessedImgs({});
+createProcessedImg({});
